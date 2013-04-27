@@ -7,8 +7,13 @@
   },
   "dependencies": {
     "express": "3.2.0",
-    "ejs": "*",
+    "jade": "*",
     "less-middleware": "*",
     "oauth": "*",
+    "mongodb": "*",
+    "moment": "*",
+    "socket.io": "*",
+    "connect-redis": "*",
+    "session.socket.io": "*"
   }
 }
