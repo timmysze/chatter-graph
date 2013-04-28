@@ -250,3 +250,7 @@ body {
   height: 80px;
   overflow: auto;
 }
+.tweet {
+  position: relative;
+  height: 80px;
+}

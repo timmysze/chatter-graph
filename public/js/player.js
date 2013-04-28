@@ -213,29 +213,6 @@ var drawPlayed = function (playNum) {
   })();
 };
 
-// var startPlaying = function () {
-//   var counter = 0;
-//   setInterval(function () {
-//     // TODO: make it such that can't go past cdf of currbar!
-//     // GENIUS FOR df and cdf!!
-//     if (tweetQueue[counter]) {
-//       var tweetsNode = document.querySelector('.tweets')
-//         , nameNode = document.querySelector('.name')
-//         , newTweetNode = document.createElement('div');
-//       // console.log(tweetsNode);
-//       newTweetNode.textContent = tweetQueue[counter].text;
-//       tweetsNode.appendChild(newTweetNode);
-//       newTweetNode.scrollIntoView();
-//       // tweetsNode.textContent = tweetQueue[counter].text;
-//       nameNode.textContent = '@'+ tweetQueue[counter].screenName;
-//       // console.log(moment(tweetQueue[counter].created_at).format());
-//       // console.log(tweetQueue[counter].twitterID);
-//       drawPlayed(counter);
-//       counter++;
-//     }
-//   }, playSpeedSecs * 1000);
-// };
-
 var startPlaying = function () {
   var counter = 0;
   setInterval(function () {
@@ -246,16 +223,11 @@ var startPlaying = function () {
         , nameNode = document.querySelector('.name')
         , newTweetNode = document.createElement('div');
       // console.log(tweetsNode);
-      newTweetNode.setAttribute('class', 'tweet');
-      newTweetNode.setAttribute('id', counter);
       newTweetNode.textContent = tweetQueue[counter].text;
       tweetsNode.appendChild(newTweetNode);
-      // jquery scrolling
-      $('.tweets').animate({ scrollTop: $('.tweets')[0].scrollHeight}, 900);
-
-      // newTweetNode.scrollIntoView();
+      newTweetNode.scrollIntoView();
       // tweetsNode.textContent = tweetQueue[counter].text;
-      // nameNode.textContent = '@'+ tweetQueue[counter].screenName;
+      nameNode.textContent = '@'+ tweetQueue[counter].screenName;
       // console.log(moment(tweetQueue[counter].created_at).format());
       // console.log(tweetQueue[counter].twitterID);
       drawPlayed(counter);
