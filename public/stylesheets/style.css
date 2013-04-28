@@ -237,6 +237,16 @@ table {
 body {
   font-family: "Heros", sans-serif;
 }
-a {
-  color: #00B7FF;
+.center {
+  width: 100%;
+  margin: 0 5%;
+}
+.deets {
+  position: relative;
+}
+.tweets {
+  position: relative;
+  width: 90%;
+  height: 80px;
+  overflow: auto;
 }
