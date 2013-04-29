@@ -2,7 +2,7 @@ var OAuth = require('oauth').OAuth
   , siteURL = "http://127.0.0.1:3000"
   , loginURL = "/twitterlogin"
   , callbackURL = "/twittercallback"
-  , redirectURL = "/recorder";
+  , redirectURL = "/livePlayer";
 
 var makeOAuth = function () {
   // Twitter OAUTH

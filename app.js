@@ -1,4 +1,3 @@
-
 /**
  * Module dependencies.
  */
@@ -12,6 +11,7 @@ var express = require('express')
   , site = require('./site')
   , auth = require('./auth')
   , rec = require('./record')
+  , livePlay = require('./livePlay')
   , http = require('http')
   , path = require('path');
 
@@ -50,10 +50,16 @@ app.get(auth.loginURL, auth.twitterLogin);
 app.get(auth.callbackURL, auth.twitterCallback);
 
 // Recording
+// app.get(auth.redirectURL, rec.index);
 
-app.get(auth.redirectURL, rec.index);
+// Live Player
+app.get(auth.redirectURL, livePlay.index);
+
 sessionSockets.on('connection', function (err, socket, session) {
   socket.on('record', function (data) {
     rec.recordTrack(socket, session, data.q, data.stamp);
+  });
+  socket.on('livePlay', function (data) {
+    livePlay.recordTrack(socket, session, data.q, data.stamp);
   });
 });

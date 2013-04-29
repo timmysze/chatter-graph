@@ -1,0 +1,22 @@
+html(lang="en")
+  head
+    title Chatter Graph
+    link(href="stylesheets/style.css", rel="stylesheet")
+    script(src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js")
+    script(src="js/d3.v3.min.js")
+    script(src="socket.io/socket.io.js")
+    script(src="js/moment.js")
+    script(src="js/jquery.transit.min.js")
+  body
+    .center
+        .wave
+            script(src="js/livePlayer.js")
+        .deets
+            h1.query
+            span.tapeStart
+            span.tapeRun
+            span.scale
+            br
+            br
+        span.name
+        .tweets

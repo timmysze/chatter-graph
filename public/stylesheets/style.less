@@ -17,6 +17,25 @@ body {
   margin: 0 5%;
 }
 
+.wave {
+  position: relative;
+}
+
+svg {
+  position: relative;
+  margin-left: 200px;
+}
+
+.cursor {
+  position: absolute;
+  left: 200px;
+  top: 5%;
+  width: 3px;
+  height: 90%;
+  background-color: red;
+  opacity: 0.5;
+}
+
 .deets {
   position: relative;
 
@@ -32,4 +51,20 @@ body {
 .tweet {
   position: relative;
   height: 80px;
+}
+
+.over {
+  fill: #00C3FF;
+}
+
+.under {
+  fill: #BFF0FF;
+}
+
+.played.over {
+  fill: #000000;
+}
+
+.played.under {
+  fill: #BBBBBB;
 }
