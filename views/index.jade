@@ -1,7 +1,30 @@
 html(lang="en")
   head
-    title= title
+    title Chatter Graph
+    meta(charset="utf8")
+    link(href="stylesheets/controls.css", rel="stylesheet")
     link(href="stylesheets/style.css", rel="stylesheet")
+    script(src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js")
+    script(src="js/d3.v3.min.js")
+    script(src="socket.io/socket.io.js")
+    script(src="js/moment.js")
+    script(src="js/jquery.transit.min.js")
   body
-    h1 #{title}
-    p Welcome to #{title}!
+    .center
+      .title
+        h3 chatter graph beta
+      .instructions
+        br
+        h2 Record twitter...
+        h3.block Step 1: 
+          input(type="text", class="query", placeholder="Enter your search.")
+        h3.block Step 2: 
+          a(href="http://127.0.0.1:3000/twitterlogin")  Log in with twitter.
+  script
+    var socket = io.connect('http://127.0.0.1')
+    $('input.query').keyup(function(e) {
+      var $this = $(this);
+      var val = $this.val();
+      socket.emit('enterQuery', val);
+    });
+

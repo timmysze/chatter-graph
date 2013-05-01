@@ -4,7 +4,7 @@ var auth = require('./auth')
   , lastTweetID = null
   , lastTweetTime = null
   , tapeStart = null
-  , recordRateSecs = 10
+  , recordRateSecs = 7
   , tapeDeck
   , secsPerBar = 1
   , scale = 1
@@ -13,6 +13,10 @@ var auth = require('./auth')
 
 exports.index = function (req, res) {
   res.render('liveplayer');
+};
+
+exports.shutDown = function () {
+  clearInterval(tapeDeck);
 };
 
 exports.recordTrack = function (sock, sess, q, stamp) {

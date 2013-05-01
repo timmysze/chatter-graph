@@ -1,3 +1,5 @@
+// console.log = function () {};
+
 var socket = io.connect('http://127.0.0.1')
   , tapeStart
   , drawRateSecs
@@ -8,8 +10,8 @@ var socket = io.connect('http://127.0.0.1')
   , playTime = null;
 
 // Graph variables
-var w = Math.floor(document.querySelector('.center').scrollWidth * 0.9)
-  , splitHeight = 180
+var w = Math.floor(document.querySelector('.center').scrollWidth * 1.0)
+  , splitHeight = 100
   , underBarsHAdj = 0.6
   , h = splitHeight * (1 + underBarsHAdj)
   , scale = 1
@@ -29,12 +31,18 @@ $('.wave').append(cursor);
 var drawHeader = function (query, tapeStart, screen_name) {
   var queryNode = document.querySelector('.query')
     , tapeStartNode = document.querySelector('.tapeStart')
+    , tapeRunNode = document.querySelector('.tapeRun')
     , nameNode = document.querySelector('.name')
     , dateString = moment(tapeStart).format('M/D/YYYY')
-    , startTimeString = moment(tapeStart).format('HH:mma');
+    , startTimeString = moment(tapeStart).format('h:mma')
+    , runTimeString;
+
+  playTime = tapeStart;
+  runTimeString = moment(playTime).format('h:mma');
 
   queryNode.textContent = query;
-  tapeStartNode.textContent = dateString + ' ' + startTimeString;
+  // tapeStartNode.textContent = 'Start time: ' + startTimeString;
+  // tapeRunNode.textContent = 'Run time: ' + runTimeString;
 
   // nameNode.textContent = '@' + screen_name;
 };
@@ -50,7 +58,7 @@ socket.on('header', function (data) {
 socket.on('buffer', function (data) {
   var scaleNode = document.querySelector('.scale');
   scale = data.scale;
-  scaleNode.textContent = ' scale: ' + scale + 'px';
+  // scaleNode.textContent = ' scale: ' + scale + 'px';
   unitHeight = splitHeight / 100 * scale;
 
   drawRateSecs = data.secsPerBar;
@@ -92,7 +100,7 @@ var drawBar = function (data, currBar) {
     , underHeight = Math.floor((data[0] * unitHeight  + rand )* underBarsHAdj)
     , overY = splitHeight - overHeight
     , underY = splitHeight
-    , currX = currBar * (unitWidth + unitPadding);
+    , currX = (currBar + 1) * (unitWidth + unitPadding) - 1;
 
   svg.selectAll('rect#over' + currBar)
       .data(data)
@@ -104,7 +112,7 @@ var drawBar = function (data, currBar) {
       .attr('y', splitHeight)
       .attr('height', 0)
       .transition()
-      .duration(500)
+      .duration(1050)
       .ease('')
       .attr('y', overY)
       .attr('width', unitWidth)
@@ -121,7 +129,7 @@ var drawBar = function (data, currBar) {
       .attr('width', unitWidth)
       .attr('height', 0)
       .transition()
-      .duration(500)
+      .duration(1050)
       .ease('')
       .attr('height', underHeight);
 };
@@ -130,18 +138,35 @@ var calcStep = function () {
   return unitWidth + unitPadding;
 };
 
-var slideWaveLeft = function () {
-  var svgNode = $('svg')
-    , currMargin = parseInt(svgNode.css('margin-left'));
+// var Slider = function () {
+//   var prevTweet = -1;
 
-  svgNode.css('margin-left', (currMargin - calcStep()) + 'px');
+// };
+
+var BarSlider = function () {
+  var prevBar = -1;
+
+  return function (newBar) {
+    var svgNode = $('svg')
+      , currMargin = parseInt(svgNode.css('margin-left'));
+
+    svgNode.css('margin-left', (currMargin - calcStep() * (newBar - prevBar)) + 'px');
+
+    prevBar = newBar;
+  };
 };
+
+var slideToBar = BarSlider();
 
 var stretchWave = function () {
   var svgNode = $('svg')
     , newWidth = (parseInt(svgNode.css('width')) + calcStep()) + 'px';
 
   svgNode.css('width',newWidth);
+};
+
+var calcPlayTime = function (tweetQueueCount) {
+  return moment(tweetQueue[tweetQueueCount].created_at).format('h:mm:ssa');
 };
 
 var startDrawing = function () {
@@ -153,15 +178,18 @@ var startDrawing = function () {
       drawBar([denFn[currBar]], currBar);
       currBar++;
       stretchWave();
+      $('.numTweets').text('Tweets recorded: ' + tweetCount);
+      $('.duration').text('Duration (seconds): ' + barDrawn);
+      $('.tps').text('Tweets per second: ' + (tweetCount / barDrawn).toFixed(2));
     }
-  }, playSpeedSecs * 500);
+  }, playSpeedSecs * 1000);
 };
 
-var paintPlayed = function (newNum) {
+var Painter = function () {
   var prevNum = -1
     , t = 0;
 
-  (function () {
+  return function (newNum) {
     if (newNum > prevNum) {
       for (var i = prevNum; i < newNum; i++) {
         t = i + 1;
@@ -169,7 +197,7 @@ var paintPlayed = function (newNum) {
         $('#under' + t).attr('class', 'under played');
       }
     } else {
-      for (var i = newNum; i > prevNum; i--) {
+      for (var i = newNum; i < prevNum; i++) {
         t = i + 1;
         $('#over' + t).attr('class', 'over');
         $('#under' + t).attr('class', 'under');
@@ -177,39 +205,87 @@ var paintPlayed = function (newNum) {
     }
 
     prevNum = newNum;
-  })();
+  };
 };
 
+var paintPlayed = Painter();
+
+var barDrawn = 0;
+var cursor = 0;
+
+// TODO: scroll to tweet
+
+var tweetCount = 0;
+
 var startPlaying = function () {
-  var barCount = 0
-    , tweetCount = 0;
 
   setInterval(function () {
     // TODO: make it such that can't go past cdf of currbar!
-    if (denFn.length > barCount) {
+    if (denFn.length > barDrawn) {
       var tweetNode
         , time = moment(tweetQueue[tweetCount].created_at)
                   .format('M-D-YYYY-HH-mm-ss')
-        , divNode = $('<div class="' + time + '""></div>');
+        , divNode = $('<div class="' + time + '""></div>')
+        , text = ''
+        , timeNode = $('<div class="block"></div>');
 
-      for (var i = 0, l = denFn[barCount]; i < l; i++) {
-        tweetNode = $('<div></div>');
-        tweetNode.text(tweetQueue[tweetCount + i].text);
-        tweetNode.addClass('tweet');
-        divNode.append(tweetNode);
+      if (denFn[barDrawn] > 0) {
+        timeNode.text(calcPlayTime(tweetCount));
+        divNode.append(timeNode);
+        for (var i = 0, l = denFn[barDrawn]; i < l; i++) {
+          tweetNode = $('<div></div>');
+          // text += calcPlayTime(tweetCount) + ' ';
+          text += tweetQueue[tweetCount + i].text;
+          tweetNode.text(text);
+          tweetNode.addClass('tweet');
+          divNode.append(tweetNode);
+        }
+        $('.tweets').append(divNode);
+        tweetCount += denFn[barDrawn];
       }
-
-      $('.tweets').append(divNode);
-      tweetCount += denFn[barCount];
 
       if (!pause) {
-        paintPlayed(barCount);
+        paintPlayed(barDrawn);
+        slideToBar(barDrawn);
         $('.tweets').animate({ scrollTop: $('.tweets')[0].scrollHeight}, 900);
-        slideWaveLeft();
+        // resumePlayback();
+        playTime = calcPlayTime(cursor);
+        console.log(cursor);
+        console.log(playTime);
+        cursor++;
       }
 
-      barCount++;
+      barDrawn++;
     }
 
   }, playSpeedSecs * 1000);
 };
+
+var pausePlayback = function () {
+  pause = !pause;
+};
+
+// var resumePlayback = function () {
+//   pause = false;
+// };
+
+var jumpToBeginning = function () {
+  slideToBar(0);
+  cursor = 0;
+};
+
+var jumpToEnd = function () {
+  slideToBar(barDrawn);
+  cursor = barDrawn;
+};
+
+// var scrollToTweet
+
+$(document).ready(function () {
+  // event listeners
+  // $('.tweets').on('scroll', pausePlayback);
+  $('.pause').on('click', pausePlayback);
+  // $('.resume').on('click', resumePlayback);
+  // $('.begin').on('click', jumpToBeginning);
+  // $('.end').on('click', jumpToEnd);
+});

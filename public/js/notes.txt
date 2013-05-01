@@ -1,0 +1,42 @@
+
+
+// time zero is the start time
+// 
+
+
+// ability to comment on tweets and highlight tweets
+
+
+
+
+// reverse the flow
+  // can i get the height of the new div without
+
+
+
+
+// take tweets wider
+// make them centered
+// put time divider at bottom of each time segment div
+
+
+
+// fix jump to end..
+
+
+// node.scrollTop()
+// gives distance from the top...
+
+// i know the current tweet by id...
+// i can always calc the date/time to get the class.. write a f'n for that...
+
+// if moving up and bottom 
+  // then move to next
+
+// offset gives {top:, left:}
+
+// can calc the .tweets top and bottom positions and know when the top of bottom
+// of the current div peeks over
+// or which div contains the midline of tweets
+
+// and then f'n that based on a tweet num, jumps to that in the graph..

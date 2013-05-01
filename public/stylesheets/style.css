@@ -234,41 +234,99 @@ table {
   font-weight: normal;
   font-style: normal;
 }
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
 body {
   font-family: "Heros", sans-serif;
 }
 .center {
+  position: relative;
+  width: 820px;
+  margin: 0 auto;
+  height: 100%;
+}
+.title {
+  position: absolute;
   width: 100%;
-  margin: 0 5%;
+  height: 30px;
+}
+.title a {
+  color: #000000;
+  text-decoration: none;
+}
+.instructions {
+  position: absolute;
+  top: 30px;
+  left: 0;
 }
 .wave {
-  position: relative;
+  position: absolute;
+  top: 30px;
+  left: 0;
+  height: 160px;
+  width: 100%;
+  overflow: hidden;
 }
-svg {
-  position: relative;
-  margin-left: 200px;
+.wave svg {
+  position: absolute;
+  left: 50%;
+  top: 0;
+}
+.control {
+  position: absolute;
+  top: 190px;
+  height: 40px;
+  right: 0;
+  width: 520px;
 }
 .cursor {
   position: absolute;
-  left: 200px;
-  top: 5%;
-  width: 3px;
-  height: 90%;
+  left: 50%;
+  top: 10%;
+  width: 1px;
+  height: 85%;
   background-color: red;
-  opacity: 0.5;
+  opacity: 0.75;
 }
 .deets {
-  position: relative;
+  position: absolute;
+  top: 190px;
+  bottom: 0;
+  left: 0;
+  right: 50%;
+}
+.query {
+  display: inline;
+}
+.numTweets,
+.duration,
+.tps {
+  font-style: italic;
+  font-size: 13px;
 }
 .tweets {
-  position: relative;
-  width: 90%;
-  height: 80px;
-  overflow: auto;
+  position: absolute;
+  top: 230px;
+  bottom: 0;
+  right: 0;
+  width: 520px;
+  font-size: 13px;
+  overflow-x: auto;
+  font-family: "Arial", sans-serif;
+}
+.tweets .block {
+  background-color: #00C3FF;
+  color: white;
+  text-align: center;
+  font-weight: bold;
+  margin-top: 10px;
 }
 .tweet {
-  position: relative;
-  height: 80px;
+  margin-top: 10px;
+  text-align: center;
 }
 .over {
   fill: #00C3FF;

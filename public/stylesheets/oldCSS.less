@@ -8,119 +8,87 @@ article,aside,details,figcaption,figure,footer,header,hgroup,nav,section,summary
  font-style: normal;
 }
 
-html, body {
-  height: 100%;
-  margin: 0;
+@base: #000000;
+
+.box-shadow(@style, @c) when (iscolor(@c)) {
+  box-shadow:         @style @c;
+  -webkit-box-shadow: @style @c;
+  -moz-box-shadow:    @style @c;
+}
+
+.box-shadow(@style, @alpha: 50%) when (isnumber(@alpha)) {
+  .box-shadow(@style, rgba(0, 0, 0, @alpha));
 }
 
 body {
   font-family: "Heros", sans-serif;
+  height: auto;
 }
-
 
 .center {
   position: relative;
-  width: 820px;
-  margin: 0 auto;
-  height: 100%;
-}
-
-@wave-size: 160px;
-@title-size: 30px;
-@control-size: 40px;
-@deets-pos: 190px;
-@tweets-pos: 230px;
-
-.title {
-  position: absolute;
-  width: 100%;
-  height: @title-size;
-  a {
-    color: #000000;
-    text-decoration: none;
-  }
-}
-
-.instructions {
-  position: absolute;
-  top: @title-size;
-  left: 0;
+  margin: 10px auto;
+  width: 837px;
+  height: 500px;
+  border: 1px solid;
+  border-radius: 6px;
+  overflow-x: hidden;
+  color: saturate(@base, 5%);
+  border-color: lighten(@base, 30%);
+  .box-shadow(0 0 7px, 30%)
 }
 
 .wave {
   position: absolute;
-  top: @title-size;
+  top: 0;
   left: 0;
-  height: @wave-size;
+  height: 160px;
   width: 100%;
   overflow: hidden;
-  svg {
-    position: absolute;
-    left: 50%;
-    top: 0;
-  }
 }
 
-.control {
+svg {
   position: absolute;
-  top: @deets-pos;
-  height: @control-size;
-  right: 0;
-  width: 520px;
+  left: 50%;
+  top: 0;
 }
 
 .cursor {
   position: absolute;
   left: 50%;
   top: 10%;
-  width: 1px;
+  width: 2px;
   height: 85%;
   background-color: red;
   opacity: 0.75;
 }
 
 .deets {
-  position: absolute;
-  top: @deets-pos;
-  bottom: 0;
-  left: 0;
-  right: 50%;
+  position: relative;
+  float: left;
+  display: inline-block;
+  // margin: 20px 20px;
 }
 
 .query {
   display: inline;
 }
 
-.numTweets, .duration, .tps {
-  // font-family: "Arial", sans-serif;
-  font-style: italic;
-  font-size: 13px;
-}
-
 .tweets {
-  position: absolute;
-  top: @tweets-pos;
-  bottom: 0;
-  // left: 50%;
-  right: 0;
-  width: 520px;
-  font-size: 13px;
-
-  overflow-x: auto;
-
+  position: relative;
+  float: right;
+  // margin: 20px 20px;
+  display: inline-block;
+  width: 496px;
+  height: auto;
+  // overflow: auto;
   font-family: "Arial", sans-serif;
-  .block {
-    background-color: #00C3FF;
-    color: white;
-    text-align: center;
-    font-weight: bold;
-    margin-top: 10px;
-  }
 }
 
 .tweet {
-  margin-top: 10px;
-  text-align: center;
+  position: relative;
+  width: auto;
+  height: 40px;
 }
 
 .over {

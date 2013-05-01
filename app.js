@@ -13,7 +13,8 @@ var express = require('express')
   , rec = require('./record')
   , livePlay = require('./livePlay')
   , http = require('http')
-  , path = require('path');
+  , path = require('path')
+  , query = 'FML';
 
 var cookieParser = express.cookieParser(process.env.CHATTER_SESSION_SECRET);
 
@@ -56,10 +57,16 @@ app.get(auth.callbackURL, auth.twitterCallback);
 app.get(auth.redirectURL, livePlay.index);
 
 sessionSockets.on('connection', function (err, socket, session) {
-  socket.on('record', function (data) {
-    rec.recordTrack(socket, session, data.q, data.stamp);
-  });
+  // socket.on('record', function (data) {
+  //   rec.recordTrack(socket, session, data.q, data.stamp);
+  // });
   socket.on('livePlay', function (data) {
-    livePlay.recordTrack(socket, session, data.q, data.stamp);
+    livePlay.recordTrack(socket, session, query, data.stamp);
+  });
+  socket.on('enterQuery', function (data) {
+    query = data;
+  });
+  socket.on('disconnect', function () {
+    livePlay.shutDown();
   });
 });
