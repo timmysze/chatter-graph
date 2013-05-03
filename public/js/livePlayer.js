@@ -48,7 +48,7 @@ var drawHeader = function (query, tapeStart, screen_name) {
 };
 
 // MAYBE: stick this in some event handler for a button click
-socket.emit('livePlay', { q: 'FML', stamp: new Date() });
+socket.emit('livePlay', { stamp: new Date() });
 
 socket.on('header', function (data) {
   tapeStart = data.tapeStart;
@@ -173,6 +173,7 @@ var startDrawing = function () {
   var currBar = 0;
 
   setInterval(function () {
+    var tps = (tweetCount / barDrawn).toFixed(2);
     // TODO: make it such that can't go past cdf of currbar!
     if (denFn.length > currBar) {
       drawBar([denFn[currBar]], currBar);
@@ -180,7 +181,9 @@ var startDrawing = function () {
       stretchWave();
       $('.numTweets').text('Tweets recorded: ' + tweetCount);
       $('.duration').text('Duration (seconds): ' + barDrawn);
-      $('.tps').text('Tweets per second: ' + (tweetCount / barDrawn).toFixed(2));
+      if (!isNaN(tps)) {
+        $('.tps').text('Tweets per second: ' + tps);
+      }
     }
   }, playSpeedSecs * 1000);
 };

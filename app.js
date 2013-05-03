@@ -1,3 +1,5 @@
+// console.log = function () {};
+
 /**
  * Module dependencies.
  */
@@ -60,12 +62,15 @@ sessionSockets.on('connection', function (err, socket, session) {
   // socket.on('record', function (data) {
   //   rec.recordTrack(socket, session, data.q, data.stamp);
   // });
+
   socket.on('livePlay', function (data) {
-    livePlay.recordTrack(socket, session, query, data.stamp);
+    livePlay.startNewRecording(socket, session, query, data.stamp);
   });
+
   socket.on('enterQuery', function (data) {
     query = data;
   });
+
   socket.on('disconnect', function () {
     livePlay.shutDown();
   });

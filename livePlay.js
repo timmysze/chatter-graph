@@ -1,204 +1,162 @@
+// console.log = function () {};
+
 var auth = require('./auth')
   , oa = auth.makeOAuth()
   , moment = require('moment')
-  , lastTweetID = null
-  , lastTweetTime = null
-  , tapeStart = null
+  // , tweetRecID = null
+  // , tweetRecTime = null
+  // , tapeStart = null
+  , bufferMin = 1
   , recordRateSecs = 7
   , tapeDeck
   , secsPerBar = 1
   , scale = 1
-  , tape = []
-  , stop = false;
+  // , tape = []
+  // , denFn = []
+  // , cmdFn = []
+  , stop = false
+  // , socket
+  // , query = 'FML'
+  // , session
+  , reel
+  ;
+
+
 
 exports.index = function (req, res) {
   res.render('liveplayer');
 };
 
 exports.shutDown = function () {
+  // TODO: refactor to telling the reel something
   clearInterval(tapeDeck);
 };
 
-exports.recordTrack = function (sock, sess, q, stamp) {
+exports.startNewRecording = function (sock, sess, q, stamp) {
+  // QUESTION: do I need this?
   if (!sess.hasOwnProperty('oAuthVars')) { return; }
-  sock.on('stop', function (data) { stop = true; });
 
-  tapeStart = moment(stamp).subtract('m', 1).startOf('minute').utc().format();
-  lastTweetTime = tapeStart;
+  reel = new require('./lib/reel').Reel(sock, sess, q, stamp);
+  reel.sendHeader();
+  recordBuffer(reel);
+};
 
-  var calcScale = function (array) {
-    var safety = 0.6
-      , maxUnits = 100
-      , maxScale = 30
-      , maxVal = array.reduce(function (prev, curr) {
-        return Math.max(prev, curr);
-      }, 1);
+var getTweets = function (url, callback) {
+  oa.getProtectedResource(url, 'GET'
+      , session.oAuthVars.oauth_access_token
+      , session.oAuthVars.oauth_access_token_secret
+      , callback);
+};
 
-    return Math.min(maxScale, Math.floor(maxUnits / maxVal * safety));
-  };
+var formatTweet = function (tweetObj) {
+  var tweet = {};
+  tweet.created_at = moment(tweetObj.created_at).utc().format();
+  console.log(tweet.created_at);
+  tweet.twitterID = tweetObj.id_str;
+  tweet.text = tweetObj.text;
+  tweet.screenName = tweetObj.user.screen_name;
+  // tweet.userID = tweetObj.user.id_str;
+  // tweet.userName = tweetObj.user.name;
+  // tweet.location = tweetObj.user.location;
+  // tweet.entities = tweetObj.entities;
+  return tweet;
+};
 
-  var getTweets = function (query, callback) {
-    oa.getProtectedResource(query, 'GET'
-        , sess.oAuthVars.oauth_access_token
-        , sess.oAuthVars.oauth_access_token_secret
-        , callback);
-  };
+var calcScale = function (array) {
+  var safety = 0.6
+    , maxUnits = 100
+    , maxScale = 30
+    , maxVal;
 
-  var formatTweet = function (element) {
-    var tweet = {};
-    tweet.created_at = moment(element.created_at).utc().format();
-    console.log(tweet.created_at);
-    tweet.twitterID = element.id_str;
-    tweet.text = element.text;
-    // tweet.userID = element.user.id_str;
-    // tweet.userName = element.user.name;
-    tweet.screenName = element.user.screen_name;
-    // tweet.location = element.user.location;
-    // tweet.entities = element.entities;
-    return tweet;
-  };
+  maxVal = array.reduce(function (prev, curr) {
+    return Math.max(prev, curr);
+  }, 1);
 
-  var offsetSecs = function (time) {
-    return moment(time).diff(moment(lastTweetTime), 'seconds');
-  };
+  return Math.min(maxScale, Math.floor(maxUnits / maxVal * safety));
+};
 
-  var recordSegment = function () {
-    var query = 'https://api.twitter.com/1.1/search/tweets.json?' +
-                'q=' + q + '&count=100' + '&result_type=recent' +
-                '&since_id=' + lastTweetID;
+var recordBuffer = function (reel, max_id) {
+  var buffer = []
+    , bufferFull = false
+    , denFn = []
+    , lastOffset = 0
+    , currOffset = 0;
 
-    var tweetHandler = function (error, data, response) {
-      var tweetStream
-        , tweet
-        , streamLength
-        , segment = []
-        , denFn = []
-        , lastOffset = 0
-        , currOffset = 0;
+  var tweetStream;
 
-      if (error) { console.log('error', error); }
-      else {
-        tweetStream = JSON.parse(data).statuses;
-        streamLength = tweetStream.length;
 
-        tweetStream.forEach(function (e, index) {
-          element = tweetStream[streamLength - 1 - index];
-          tweet = formatTweet(element);
-          tape.push(tweet);
-          segment.push(tweet);
+  var url = 'https://api.twitter.com/1.1/search/tweets.json?' +
+            'q=' + reel.query + '&count=100' + '&result_type=recent';
 
-          currOffset = offsetSecs(tweet.created_at);
-          for (var i = 1; i < currOffset - lastOffset; i++) {
-            denFn.push(0);
-          }
-          if (denFn[currOffset]) {
-            denFn[currOffset]++;
-          } else {
-            denFn.push(1);
-            lastOffset = currOffset;
-          }
-        });
+  if (max_id) { url += '&max_id=' + max_id; }
 
-        sock.emit('segment', {
-          segment: segment,
-          denFn: denFn
-        });
+  getTweets(url, function (error, data, response) {
+    tweetStream = JSON.parse(data).statuses;
+    max_id = tweetStream[tweetStream.length-1].id_str;
 
-        lastTweetID = tape[tape.length-1].twitterID;
-        lastTweetTime = tape[tape.length-1].created_at;
-      }
-    };
+    tweetStream.forEach(function (element, index) {
+      reel.addToBuffer(element);
+    });
 
-    getTweets(query, tweetHandler);
-  };
+    if (!reel.bufferFull) {
+      recordBuffer(reel, max_id);
+    } else {
+      reel.sendBuffer();
+      tapeDeck = setInterval(recordSegment, recordRateSecs * 1000);
+    }
+  });
+};
 
-  var recordBuffer = function () {
-    var buffer = []
-      , bufferFull = false
+var recordSegment = function (reel) {
+
+  // ask the reel for the query
+  // ask the reel for the since_id tweetid
+
+  var url = 'https://api.twitter.com/1.1/search/tweets.json?' +
+            'q=' + query + '&count=100' + '&result_type=recent' +
+            '&since_id=' + tweetRecID;
+
+  var tweetHandler = function (error, data, response) {
+    var tweetStream
+      , tweet
+      , streamLength
+      , segment = []
       , denFn = []
       , lastOffset = 0
       , currOffset = 0;
 
-    // Grab historical tweets until fill buffer
-    var iterator = function (max_id) {
-      var tweetStream
-        , tweet
-        , query = 'https://api.twitter.com/1.1/search/tweets.json?' +
-                  'q=' + q + '&count=100' + '&result_type=recent';
+    if (error) { console.log('error', error); }
+    else {
+      tweetStream = JSON.parse(data).statuses;
+      streamLength = tweetStream.length;
 
-      if (max_id) { query += '&max_id=' + max_id; }
+      tweetStream.forEach(function (e, index) {
+        element = tweetStream[streamLength - 1 - index];
+        tweet = formatTweet(element);
+        tape.push(tweet);
+        segment.push(tweet);
 
-      var tweetHandler = function (error, data, response) {
-
-        if (error) { console.log('error', error); }
-        else {
-          tweetStream = JSON.parse(data).statuses;
-          // MAYBE: if max_id, then skip the first one?
-
-          tweetStream.forEach(function (element, index) {
-            if (moment(element.created_at) >= moment(tapeStart)) {
-              tweet = formatTweet(element);
-              tape.unshift(tweet);
-              buffer.unshift(tweet);
-            } else {
-              bufferFull = true;
-            }
-          });
+        currOffset = calcOffsetSecs(tweet.created_at);
+        for (var i = 1; i < currOffset - lastOffset; i++) {
+          denFn.push(0);
         }
-
-        if (!bufferFull) {
-          iterator(tape[0].twitterID);
+        if (denFn[currOffset]) {
+          denFn[currOffset]++;
         } else {
-          for (var i = 0, l = buffer.length; i < l; i++) {
-            var ntweet = buffer[i];
-            currOffset = offsetSecs(ntweet.created_at);
-            for (var j = 1; j < currOffset - lastOffset; j++) {
-              denFn.push(0);
-            }
-            if (denFn[currOffset]) {
-              denFn[currOffset]++;
-            } else {
-              denFn.push(1);
-              lastOffset = currOffset;
-            }
-          }
-
-          // MAYBE: handling full buffer w/o any data
-          lastTweetID = tape[tape.length - 1].twitterID;
-          lastTweetTime = tape[tape.length-1].created_at;
-          scale = calcScale(denFn);
-          sock.emit('buffer', {
-            buffer: buffer,
-            denFn: denFn,
-            secsPerBar: secsPerBar,
-            scale: scale
-          });
-          tapeDeck = setInterval(recordSegment, recordRateSecs * 1000);
+          denFn.push(1);
+          lastOffset = currOffset;
         }
-      };
+      });
 
-      getTweets(query, tweetHandler);
-    };
+      socket.emit('segment', {
+        segment: segment,
+        denFn: denFn
+      });
 
-    iterator();
+      tweetRecID = tape[tape.length-1].twitterID;
+      console.log('recID: ' + tweetRecID);
+      tweetRecTime = tape[tape.length-1].created_at;
+    }
   };
-
-  var sendHeader = function () {
-    var header = {}
-      , url = 'https://api.twitter.com/1.1/account/settings.json';
-
-    header.query = q;
-    header.tapeStart = tapeStart;
-    oa.getProtectedResource(url, 'GET'
-        , sess.oAuthVars.oauth_access_token
-        , sess.oAuthVars.oauth_access_token_secret
-        , function (error, data, response) {
-          if (error) { console.log('error', error); }
-          header.screen_name = JSON.parse(data).screen_name;
-          sock.emit('header', header);
-        });
-  };
-
-  sendHeader();
-  recordBuffer();
+  getTweets(url, tweetHandler);
 };
