@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <title>chatter graph</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="assets/style.css">
+    <script src="assets/d3.v3.min.js" charset="utf-8"></script>
+</head>
+<body>
+  <script type="text/javascript">
+    //Width and height
+    var w = 860;
+    var split = 180;
+    var fraction = 0.75;
+    var h = split * (1 + fraction);
+    var numBars = 100;
+    var barPadding = 2;
+
+    var dataset = [];
+
+    //Create SVG element
+    var svg = d3.select("body")
+                .append("svg")
+                .attr("width", w)
+                .attr("height", h);
+
+    for (var i = 0; i < 100; i++) {
+      dataset.push(Math.floor(Math.random() * split));
+    }
+      svg.selectAll("rect.over")
+         .data(dataset)
+         .enter()
+         .append("rect")
+         .attr("x", function(d, i) {
+             return i * w / numBars;
+          })
+         .attr("y", function(d){
+            return split - d;
+         })
+         .attr("width", w / dataset.length - barPadding)
+          .attr("height", function(d) {
+              return d;
+          })
+        .attr("fill", "#00C3FF");
+
+      svg.selectAll("rect.under")
+         .data(dataset)
+         .enter()
+         .append("rect")
+         .attr("x", function(d, i) {
+             return i * w / numBars;
+          })
+         .attr("y", function(d){
+            return split;
+         })
+         .attr("width", w / dataset.length - barPadding)
+          .attr("height", function(d) {
+              return d * fraction;
+          })
+        .attr("fill", "#00C3FF")
+        .attr("opacity", "0.2");
+  </script>
+</body>
+</html>
