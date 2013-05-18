@@ -19,11 +19,8 @@ var express = require('express')
 
 if (process.env.CHATTER_ENV === 'production') {
   var client = redis.createClient(6379, 'nodejitsudb681017101.redis.irstack.com');
-  client.auth('nodejitsudb681017101.redis.irstack.com:f327cfe980c971946e80b8e975fbebb4', function (err) {
-    if (err) { throw err; }
-    // You are now connected to your redis.
-    store = new RedisStore({ client: client });
-  });
+  client.auth('nodejitsudb681017101.redis.irstack.com:f327cfe980c971946e80b8e975fbebb4');
+  store = new RedisStore({ client: client });
 } else {
   store = new RedisStore();
 }
