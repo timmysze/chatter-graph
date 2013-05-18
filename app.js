@@ -5,7 +5,6 @@
 var express = require('express')
   , app = express()
   , RedisStore = require('connect-redis')(express)
-  , store = new RedisStore()
   , server = require('http').createServer(app)
   , io = require('socket.io').listen(server)
   , site = require('./site')
@@ -14,15 +13,19 @@ var express = require('express')
   , livePlay = require('./livePlay')
   , http = require('http')
   , path = require('path')
-  , query = 'FML';
+  , query = 'FML'
+  , redis = require('iris-redis')
+  , store;
 
 if (process.env.CHATTER_ENV === 'production') {
-  var redis = require('redis');
-  store = redis.createClient(6379, 'nodejitsudb681017101.redis.irstack.com');
-  store.auth('nodejitsudb681017101.redis.irstack.com:f327cfe980c971946e80b8e975fbebb4', function (err) {
+  var client = redis.createClient(6379, 'nodejitsudb681017101.redis.irstack.com');
+  client.auth('nodejitsudb681017101.redis.irstack.com:f327cfe980c971946e80b8e975fbebb4', function (err) {
     if (err) { throw err; }
     // You are now connected to your redis.
   });
+  store = new RedisStore({ client: client });
+} else {
+  store = new RedisStore();
 }
 
 var cookieParser = express.cookieParser(process.env.CHATTER_SESSION_SECRET);

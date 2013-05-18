@@ -1,6 +1,6 @@
 {
   "name": "application-name",
-  "version": "0.0.1-4",
+  "version": "0.0.1-5",
   "private": true,
   "scripts": {
     "start": "node app.js"
@@ -14,7 +14,8 @@
     "moment": "*",
     "socket.io": "*",
     "connect-redis": "*",
-    "session.socket.io": "*"
+    "session.socket.io": "*",
+    "iris-redis": "*"
   },
   "engines": {
     "node": "0.8.x"
