@@ -19,9 +19,9 @@ html(lang="en")
         h3.block Step 1: 
           input(type="text", class="query", placeholder="Enter your search.")
         h3.block Step 2: 
-          a(href="http://127.0.0.1:3000/twitterlogin")  Log in with twitter.
+          a(href="#{siteURL}/twitterlogin")  Log in with twitter.
   script
-    var socket = io.connect('http://127.0.0.1')
+    var socket = io.connect('#{siteURL}')
     $('input.query').keyup(function(e) {
       var $this = $(this);
       var val = $this.val();

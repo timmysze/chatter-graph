@@ -12,7 +12,7 @@ var auth = require('./auth')
   , stop = false;
 
 exports.index = function (req, res) {
-  res.render('liveplayer');
+  res.render('liveplayer', { siteURL: process.env.CHATTER_CALLBACK_URL });
 };
 
 exports.shutDown = function () {
