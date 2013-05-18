@@ -1,5 +1,5 @@
 var OAuth = require('oauth').OAuth
-  , siteURL = process.env.CHATTER_CALLBACK_URL;
+  , siteURL = process.env.CHATTER_CALLBACK_URL
   , loginURL = "/twitterlogin"
   , callbackURL = "/twittercallback"
   , redirectURL = "/livePlayer";
