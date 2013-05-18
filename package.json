@@ -15,5 +15,9 @@
     "socket.io": "*",
     "connect-redis": "*",
     "session.socket.io": "*"
-  }
+  },
+  "engines": {
+    "node": "0.8.x"
+  },
+  "subdomain": "chattergraph"
 }
