@@ -18,8 +18,9 @@ html(lang="en")
         h2 Record twitter...
         h3.block Step 1: 
           input(type="text", class="query", placeholder="Enter your search.")
-        h3.block Step 2: 
-          a(href="#{siteURL}/twitterlogin")  Log in with twitter.
+        h3.block Step 2:
+          link = '/twitterlogin'
+          a(href= link)  Log in with twitter.
   script
     var socket = io.connect('#{siteURL}')
     $('input.query').keyup(function(e) {
