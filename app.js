@@ -22,8 +22,8 @@ if (process.env.CHATTER_ENV === 'production') {
   client.auth('nodejitsudb681017101.redis.irstack.com:f327cfe980c971946e80b8e975fbebb4', function (err) {
     if (err) { throw err; }
     // You are now connected to your redis.
+    store = new RedisStore({ client: client });
   });
-  store = new RedisStore({ client: client });
 } else {
   store = new RedisStore();
 }
