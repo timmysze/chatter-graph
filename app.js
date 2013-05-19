@@ -16,10 +16,10 @@ var express = require('express')
   , http = require('http')
   , path = require('path')
   , query = 'FML'
-  , redis = require('iris-redis')
+  , redis = require('redis')
   , store;
 
-if (process.env.CHATTER_ENV === 'production') {
+if (process.env.NODE_ENV === 'production') {
   var client = redis.createClient(6379, 'nodejitsudb681017101.redis.irstack.com');
   client.auth('nodejitsudb681017101.redis.irstack.com:f327cfe980c971946e80b8e975fbebb4');
   store = new RedisStore({ client: client });

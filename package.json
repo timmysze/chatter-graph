@@ -15,7 +15,7 @@
     "socket.io": "*",
     "connect-redis": "*",
     "session.socket.io": "*",
-    "iris-redis": "*"
+    "redis": "*"
   },
   "engines": {
     "node": "0.8.x"
