@@ -15,7 +15,8 @@
     "socket.io": "*",
     "connect-redis": "*",
     "session.socket.io": "*",
-    "redis": "*"
+    "redis": "*",
+    "async": "*"
   },
   "engines": {
     "node": "0.8.x"

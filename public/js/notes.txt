@@ -1,4 +1,6 @@
 
+// the main bug was that sometimes I would get duplicated get requests to twitter
+
 
 // time zero is the start time
 // 

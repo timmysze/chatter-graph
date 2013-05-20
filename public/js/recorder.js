@@ -1,277 +1,294 @@
+// console.log = function () {};
+
 var socket = io.connect('http://127.0.0.1')
   , tapeStart
-  , tapeEnd
-  , totSecs
-  , currBar = 0
-  , currDrawTime
   , drawRateSecs
-  , playSpeedSecs = 2
+  , playSpeedSecs = 1
   , tweetQueue = []
-  , denFn
-  , cumDenFn;
+  , denFn = []
+  , pause = false
+  , playTime = null;
 
 // Graph variables
-var numBars = 100;
-var w = Math.floor(document.querySelector('.center').scrollWidth * 0.9);
-var splitHeight = 180;
-var underBarsHAdj = 0.75;
-var h = splitHeight * (1 + underBarsHAdj);
-var scale = 1;
-var unitPadding = 2;
-var unitWidth = Math.floor(w / numBars - unitPadding);
-var unitHeight = splitHeight / 100 * scale;
+var w = Math.floor(document.querySelector('.center').scrollWidth * 1.0)
+  , splitHeight = 100
+  , underBarsHAdj = 0.6
+  , h = splitHeight * (1 + underBarsHAdj)
+  , scale = 1
+  , unitPadding = 1
+  , unitWidth = 3
+  , unitHeight = scale;
 
 //Create SVG element
-var svg = d3.select('.center')
+var svg = d3.select('.wave')
             .insert('svg')
             .attr('width', w)
             .attr('height', h);
 
+var cursor = $('<div class="cursor"></div>');
+$('.wave').append(cursor);
+
 var drawHeader = function (query, tapeStart, screen_name) {
   var queryNode = document.querySelector('.query')
     , tapeStartNode = document.querySelector('.tapeStart')
+    , tapeRunNode = document.querySelector('.tapeRun')
     , nameNode = document.querySelector('.name')
     , dateString = moment(tapeStart).format('M/D/YYYY')
-    , startTimeString = moment(tapeStart).format('HH:mma');
+    , startTimeString = moment(tapeStart).format('h:mma')
+    , runTimeString;
+
+  playTime = tapeStart;
+  runTimeString = moment(playTime).format('h:mma');
 
   queryNode.textContent = query;
-  tapeStartNode.textContent = dateString + ' ' + startTimeString;
+  // tapeStartNode.textContent = 'Start time: ' + startTimeString;
+  // tapeRunNode.textContent = 'Run time: ' + runTimeString;
 
   // nameNode.textContent = '@' + screen_name;
 };
 
 // MAYBE: stick this in some event handler for a button click
-// TODO: do something about this data...
-socket.emit('record', { q: 'FML', stamp: new Date() });
+socket.emit('livePlay', { stamp: new Date() });
 
 socket.on('header', function (data) {
   tapeStart = data.tapeStart;
-  tapeEnd = data.tapeEnd;
   drawHeader(data.query, data.tapeStart, data.screen_name);
 });
 
 socket.on('buffer', function (data) {
   var scaleNode = document.querySelector('.scale');
+  scale = data.scale;
+  // scaleNode.textContent = ' scale: ' + scale + 'px';
+  unitHeight = splitHeight / 100 * scale;
+
+  drawRateSecs = data.secsPerBar;
 
   data.buffer.forEach(function (tweet) {
     tweetQueue.push(tweet);
   });
-  denFn = data.denFn;
-  cumDenFn = data.cumDenFn;
-  drawRateSecs = data.secsPerBar;
-  scale = data.scale;
-  scaleNode.textContent = ' scale: ' + scale + 'x';
-  unitHeight = splitHeight / 100 * scale;
+
+  data.denFn.forEach(function (bar) {
+    denFn.push(bar);
+
+    // drawBar([bar]);
+    // currBar++;
+  });
+
   startDrawing();
+  startPlaying();
 });
 
 socket.on('segment', function (data) {
   data.segment.forEach(function (tweet) {
     tweetQueue.push(tweet);
   });
-  denFn = data.denFn;
-  cumDenFn = data.cumDenFn;
+  data.denFn.forEach(function (bar) {
+    denFn.push(bar);
+    // drawBar([bar]);
+    // currBar++;
+  });
 });
 
-socket.on('finished', function () {
+socket.on('finished', function () {});
 
-});
+// TODO: ability to select search term
 
-// TODO: add a textbox for entry of search query
-  // in place editing of search term?
-
-// MAYBE: refactor so that this takes those params for drawing
-// MAYBE: move this into a module
-var drawBar = function (data) {
-
-  // TODO: refactor so that currBar and stuff are params
-  var overHeight = Math.floor(data[0] * unitHeight)
-    , underHeight = Math.floor(data[0] * unitHeight * underBarsHAdj)
+var drawBar = function (data, currBar) {
+  // TODO: refactor so these are params
+  var rand = Math.floor((Math.random() * unitHeight) / 4)
+    , overHeight = Math.floor(data[0] * unitHeight) + rand
+    , underHeight = Math.floor((data[0] * unitHeight  + rand )* underBarsHAdj)
     , overY = splitHeight - overHeight
     , underY = splitHeight
-    , currX = currBar * (unitWidth + unitPadding);
+    , currX = (currBar + 1) * (unitWidth + unitPadding) - 1;
 
-  svg.selectAll('rect.over' + currBar)
+  svg.selectAll('rect#over' + currBar)
       .data(data)
       .enter()
       .append('rect')
-      .attr('class', 'over' + currBar)
-      .attr('fill', '#000000')
-      // .attr('fill', '#00C3FF')
+      .attr('class', 'over')
+      .attr('id', 'over' + currBar)
       .attr('x', currX)
       .attr('y', splitHeight)
       .attr('height', 0)
       .transition()
-      .duration(800)
+      .duration(1050)
       .ease('')
       .attr('y', overY)
       .attr('width', unitWidth)
       .attr('height', overHeight);
 
-  svg.selectAll('rect.under' + currBar)
+  svg.selectAll('rect#under' + currBar)
       .data(data)
       .enter()
       .append('rect')
-      .attr('class', 'under' + currBar)
-      .attr('fill', '#000000')
-      // .attr('fill', '#00C3FF')
-      .attr('opacity', '0.2')
+      .attr('class', 'under')
+      .attr('id', 'under' + currBar)
       .attr('x', currX)
       .attr('y', underY)
       .attr('width', unitWidth)
       .attr('height', 0)
       .transition()
-      .duration(800)
+      .duration(1050)
       .ease('')
       .attr('height', underHeight);
 };
 
-var drawPlayed = function (playNum) {
-  var prevPlayed = null;
-
-  // get it to fill up.. so 
-  // if it's after prev.. then fill up the past current...
-
-
-  // how to do multi stage transitions...
-    // some signal when a transition is done?
-
-  return (function () {
-    // init the progress bar if not already
-    svg.selectAll('rect.overProg').remove();
-    svg.selectAll('rect.underProg').remove();
-    var progOverBar = svg.selectAll('rect.overProg')
-                      .data([0])
-                      .enter()
-                      .append('rect')
-                      .attr('class', 'overProg');
-    var progUnderBar = svg.selectAll('rect.underProg')
-                      .data([0])
-                      .enter()
-                      .append('rect')
-                      .attr('class', 'underProg');
-
-    // reset all the bars colors
-    svg.selectAll('rect')
-        .attr('fill', '#000000');
-
-    // reset the progBar
-    progOverBar.attr('height', 0);
-    progUnderBar.attr('height', 0);
-
-    // playNum less than zero means show none
-    if (playNum < 0) {
-      // just reset
-      return;
-    }
-
-    // use the cdf to calc which bars played
-    // and fraction of which on i'm playing...
-    // cdf is cumDenFn
-    var upToBar = 0;
-    for (var i = 0; i < numBars; i++) {
-      if (playNum <= cumDenFn[i]) {
-        upToBar = i;
-        i = numBars;
-      }
-    }
-
-    for (var i = 0; i < upToBar; i++) {
-      svg.selectAll('rect.over'+i).attr('fill', '#00C3FF');
-      svg.selectAll('rect.under'+i).attr('fill', '#00C3FF');
-    }
-
-    var blueUnits;
-
-    // TODO: refactor to turnery operator
-    if (upToBar) {
-      blueUnits = playNum - cumDenFn[upToBar - 1];
-    } else {
-      blueUnits = playNum;
-    }
-
-    var overHeight = Math.floor(blueUnits * unitHeight);
-    var underHeight = Math.floor(blueUnits * unitHeight * underBarsHAdj);
-    var overY = splitHeight - overHeight;
-    var underY = splitHeight;
-    var currX = upToBar * (unitWidth + unitPadding);
-
-    progOverBar.data([blueUnits])
-                .attr('fill', '#00C3FF')
-                .attr('x', currX)
-                .attr('y', overY)
-                .attr('width', unitWidth)
-                .attr('height', overHeight);
-
-    progUnderBar.data([blueUnits])
-                .attr('fill', '#BFF0FF')
-                // .attr('opacity', '0.2')
-                .attr('x', currX)
-                .attr('y', underY)
-                .attr('width', unitWidth)
-                .attr('height', underHeight);
-  })();
+var calcStep = function () {
+  return unitWidth + unitPadding;
 };
 
-// var startPlaying = function () {
-//   var counter = 0;
-//   setInterval(function () {
-//     // TODO: make it such that can't go past cdf of currbar!
-//     // GENIUS FOR df and cdf!!
-//     if (tweetQueue[counter]) {
-//       var tweetsNode = document.querySelector('.tweets')
-//         , nameNode = document.querySelector('.name')
-//         , newTweetNode = document.createElement('div');
-//       // console.log(tweetsNode);
-//       newTweetNode.textContent = tweetQueue[counter].text;
-//       tweetsNode.appendChild(newTweetNode);
-//       newTweetNode.scrollIntoView();
-//       // tweetsNode.textContent = tweetQueue[counter].text;
-//       nameNode.textContent = '@'+ tweetQueue[counter].screenName;
-//       // console.log(moment(tweetQueue[counter].created_at).format());
-//       // console.log(tweetQueue[counter].twitterID);
-//       drawPlayed(counter);
-//       counter++;
-//     }
-//   }, playSpeedSecs * 1000);
+// var Slider = function () {
+//   var prevTweet = -1;
+
 // };
 
-var startPlaying = function () {
-  var counter = 0;
-  setInterval(function () {
-    // TODO: make it such that can't go past cdf of currbar!
-    // GENIUS FOR df and cdf!!
-    if (tweetQueue[counter]) {
-      var tweetsNode = document.querySelector('.tweets')
-        , nameNode = document.querySelector('.name')
-        , newTweetNode = document.createElement('div');
-      // console.log(tweetsNode);
-      newTweetNode.setAttribute('class', 'tweet');
-      newTweetNode.setAttribute('id', counter);
-      newTweetNode.textContent = tweetQueue[counter].text;
-      tweetsNode.appendChild(newTweetNode);
-      // jquery scrolling
-      $('.tweets').animate({ scrollTop: $('.tweets')[0].scrollHeight}, 900);
+var BarSlider = function () {
+  var prevBar = -1;
 
-      // newTweetNode.scrollIntoView();
-      // tweetsNode.textContent = tweetQueue[counter].text;
-      // nameNode.textContent = '@'+ tweetQueue[counter].screenName;
-      // console.log(moment(tweetQueue[counter].created_at).format());
-      // console.log(tweetQueue[counter].twitterID);
-      drawPlayed(counter);
-      counter++;
+  return function (newBar) {
+    var svgNode = $('svg')
+      , currMargin = parseInt(svgNode.css('margin-left'));
+
+    svgNode.css('margin-left', (currMargin - calcStep() * (newBar - prevBar)) + 'px');
+
+    prevBar = newBar;
+  };
+};
+
+var slideToBar = BarSlider();
+
+var stretchWave = function () {
+  var svgNode = $('svg')
+    , newWidth = (parseInt(svgNode.css('width')) + calcStep()) + 'px';
+
+  svgNode.css('width',newWidth);
+};
+
+var calcPlayTime = function (tweetQueueCount) {
+  return moment(tweetQueue[tweetQueueCount].created_at).format('h:mm:ssa');
+};
+
+var startDrawing = function () {
+  var currBar = 0;
+
+  setInterval(function () {
+    var tps = (tweetCount / barDrawn).toFixed(2);
+    // TODO: make it such that can't go past cdf of currbar!
+    if (denFn.length > currBar) {
+      drawBar([denFn[currBar]], currBar);
+      currBar++;
+      stretchWave();
+      $('.numTweets').text('Tweets recorded: ' + tweetCount);
+      $('.duration').text('Duration (seconds): ' + barDrawn);
+      if (!isNaN(tps)) {
+        $('.tps').text('Tweets per second: ' + tps);
+      }
     }
   }, playSpeedSecs * 1000);
 };
 
-var startDrawing = function () {
-  if(denFn[currBar]){
-    drawBar([denFn[currBar]]);
-    currBar++;
-  }
-  startPlaying();
-  setInterval(function () {
-    drawBar([denFn[currBar]]);
-    if (currBar++ > numBars) {   clearInterval(); }
-  }, drawRateSecs * 1000);
+var Painter = function () {
+  var prevNum = -1
+    , t = 0;
+
+  return function (newNum) {
+    if (newNum > prevNum) {
+      for (var i = prevNum; i < newNum; i++) {
+        t = i + 1;
+        $('#over' + t).attr('class', 'over played');
+        $('#under' + t).attr('class', 'under played');
+      }
+    } else {
+      for (var i = newNum; i < prevNum; i++) {
+        t = i + 1;
+        $('#over' + t).attr('class', 'over');
+        $('#under' + t).attr('class', 'under');
+      }
+    }
+
+    prevNum = newNum;
+  };
 };
+
+var paintPlayed = Painter();
+
+var barDrawn = 0;
+var cursor = 0;
+
+// TODO: scroll to tweet
+
+var tweetCount = 0;
+
+var startPlaying = function () {
+
+  setInterval(function () {
+    // TODO: make it such that can't go past cdf of currbar!
+    if (denFn.length > barDrawn) {
+      var tweetNode
+        , time = moment(tweetQueue[tweetCount].created_at)
+                  .format('M-D-YYYY-HH-mm-ss')
+        , divNode = $('<div class="' + time + '""></div>')
+        , text = ''
+        , timeNode = $('<div class="block"></div>');
+
+      if (denFn[barDrawn] > 0) {
+        timeNode.text(calcPlayTime(tweetCount));
+        divNode.append(timeNode);
+        for (var i = 0, l = denFn[barDrawn]; i < l; i++) {
+          tweetNode = $('<div></div>');
+          // text += calcPlayTime(tweetCount) + ' ';
+          text += tweetQueue[tweetCount + i].text;
+          tweetNode.text(text);
+          tweetNode.addClass('tweet');
+          divNode.append(tweetNode);
+        }
+        $('.tweets').append(divNode);
+        tweetCount += denFn[barDrawn];
+      }
+
+      if (!pause) {
+        paintPlayed(barDrawn);
+        slideToBar(barDrawn);
+        $('.tweets').animate({ scrollTop: $('.tweets')[0].scrollHeight}, 900);
+        // resumePlayback();
+        playTime = calcPlayTime(cursor);
+        console.log(cursor);
+        console.log(playTime);
+        cursor++;
+      }
+
+      barDrawn++;
+    }
+
+  }, playSpeedSecs * 1000);
+};
+
+var pausePlayback = function () {
+  pause = !pause;
+};
+
+// var resumePlayback = function () {
+//   pause = false;
+// };
+
+var jumpToBeginning = function () {
+  slideToBar(0);
+  cursor = 0;
+};
+
+var jumpToEnd = function () {
+  slideToBar(barDrawn);
+  cursor = barDrawn;
+};
+
+// var scrollToTweet
+
+$(document).ready(function () {
+  // event listeners
+  // $('.tweets').on('scroll', pausePlayback);
+  $('.pause').on('click', pausePlayback);
+  // $('.resume').on('click', resumePlayback);
+  // $('.begin').on('click', jumpToBeginning);
+  // $('.end').on('click', jumpToEnd);
+});

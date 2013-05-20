@@ -1,8 +1,6 @@
 // console.log = function () {};
 
-/**
- * Module dependencies.
- */
+// Module Dependencies
 
 var express = require('express')
   , app = express()
@@ -10,27 +8,31 @@ var express = require('express')
   , server = require('http').createServer(app)
   , io = require('socket.io').listen(server)
   , site = require('./site')
-  , auth = require('./auth')
-  , rec = require('./record')
-  , livePlay = require('./livePlay')
+  , twitterAuth = require('./lib/auth')
+  , recorder = require('./recorder')
   , http = require('http')
   , path = require('path')
   , query = 'FML'
   , redis = require('redis')
   , store;
 
+var cookieParser = express.cookieParser(process.env.CHATTER_SESSION_SECRET);
+
+server.listen(3000);
+console.log('Express server listening on port 3000');
+
+// Session Setup
+
 if (process.env.NODE_ENV === 'production') {
   var client = redis.createClient(6379, 'nodejitsudb681017101.redis.irstack.com');
-  client.auth('nodejitsudb681017101.redis.irstack.com:f327cfe980c971946e80b8e975fbebb4');
+  client.twitterAuth('nodejitsudb681017101.redis.irstack.com:f327cfe980c971946e80b8e975fbebb4');
   store = new RedisStore({ client: client });
 } else {
   store = new RedisStore();
 }
 
-var cookieParser = express.cookieParser(process.env.CHATTER_SESSION_SECRET);
-
-server.listen(3000);
-console.log('Express server listening on port 3000');
+var SessionSockets = require('session.socket.io')
+  , sessionSockets = new SessionSockets(io, store, cookieParser);
 
 // Config
 
@@ -49,31 +51,18 @@ if ('development' == app.get('env')) {
   app.use(express.errorHandler());
 }
 
-var SessionSockets = require('session.socket.io')
-  , sessionSockets = new SessionSockets(io, store, cookieParser);
-
-// General
+// Routes
 
 app.get('/', site.index);
+app.get(twitterAuth.loginURL, twitterAuth.loginHandler);
+app.get(twitterAuth.callbackURL, twitterAuth.callbackHandler);
+app.get(twitterAuth.redirectURL, livePlay.index);
 
-// Auth
-
-app.get(auth.loginURL, auth.twitterLogin);
-app.get(auth.callbackURL, auth.twitterCallback);
-
-// Recording
-// app.get(auth.redirectURL, rec.index);
-
-// Live Player
-app.get(auth.redirectURL, livePlay.index);
+// Socket Connections
 
 sessionSockets.on('connection', function (err, socket, session) {
-  // socket.on('record', function (data) {
-  //   rec.recordTrack(socket, session, data.q, data.stamp);
-  // });
-
   socket.on('livePlay', function (data) {
-    livePlay.startNewRecording(socket, session, query, data.stamp);
+    recorder.start(socket, session, query, data.stamp);
   });
 
   socket.on('enterQuery', function (data) {
@@ -81,6 +70,7 @@ sessionSockets.on('connection', function (err, socket, session) {
   });
 
   socket.on('disconnect', function () {
+    // TODO: implement this function.
     livePlay.shutDown();
   });
 });

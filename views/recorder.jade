@@ -1,20 +1,45 @@
 html(lang="en")
   head
     title Chatter Graph
+    meta(charset="utf8")
+    link(href="stylesheets/controls.css", rel="stylesheet")
     link(href="stylesheets/style.css", rel="stylesheet")
     script(src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js")
     script(src="js/d3.v3.min.js")
     script(src="socket.io/socket.io.js")
     script(src="js/moment.js")
+    script(src="js/jquery.transit.min.js")
   body
     .center
-        script(src="js/recorder.js")
-        .deets
+        .title
+            h3
+                a(href="#{siteURL}") chatter graph beta
+        .wave
+            script(src="js/recorder.js")
+        span.deets
             h1.query
-            span.tapeStart
-            span.tapeRun
-            span.scale
-            br
-            br
-        span.name
+            //- br
+            //- span.tapeStart
+            //- br
+            //- span.tapeRun
+            //- br
+            //- span.scale
+            //- br
+            div.numTweets
+            div.duration
+            div.tps
+            //- br
+        .control
+            h4 tweets
+            nav
+                ul
+                    //- li
+                    //-     a.begin beginning
+                    li
+                        a.pause play/pause
+                    //- li
+                    //-     a.resume resume
+                    //- li
+                    //-     a.end end
         .tweets
+        //- span.name
